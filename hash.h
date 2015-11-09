@@ -12,6 +12,6 @@
 #include <stdio.h>
 #include <stdint.h>
 
-uint32_t hash(const char *, int);
+uint32_t hash(const char *);
 
 #endif /* defined(__foundation__hash__) */

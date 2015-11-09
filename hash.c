@@ -19,9 +19,13 @@
 +(uint32_t)(((const uint8_t *)(d))[0]) )
 #endif
 
-uint32_t hash(const char *data, int len) {
+#define LEN 101
+
+uint32_t hash(const char *data) {
     uint32_t hsh, tmp;
-    int rem;
+    int rem, len;
+    
+    len = LEN;
     
     hsh = (uint32_t)len;
     

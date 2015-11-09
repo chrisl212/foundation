@@ -66,8 +66,11 @@ void arrrm(array_t *arr, unsigned idx) {
             arradd(new, arrobj(arr, i));
         i++;
     }
-    arrfree(arr);
-    *arr = *new;
+    free(arr->objs);
+    arr->objs = new->objs;
+    arr->cnt = new->cnt;
+    arr->sz = new->sz;
+    free(new);
 }
 
 unsigned arrcnt(array_t *arr) {

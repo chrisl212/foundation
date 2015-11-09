@@ -11,6 +11,9 @@
 
 #include <stdio.h>
 
+/**
+ @brief @c array_t is a structure that holds an ordered collection of objects of any type.
+ */
 typedef struct array array_t;
 
 /**
