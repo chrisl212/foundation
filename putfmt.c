@@ -9,57 +9,50 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <ctype.h>
 #include "putfmt.h"
 #include "dict.h"
 
 dict_t *deflt;
 
-typedef char *(*fmtfunc_t)(void *, unsigned long *);
+typedef char *(*fmtfunc_t)(void *, const char *);
 
-char *fmtint(int, unsigned long *);
-char *fmtstr(const char *, unsigned long *);
-char *fmtflt(double, unsigned long *);
-char *fmtptr(void *, unsigned long *);
+char *fmtint(int *, const char *);
+char *fmtstr(const char *, const char *);
+char *fmtflt(double *, const char *);
+char *fmtptr(void *, const char *);
 
-char *fmtint(int i, unsigned long *len) {
+char *fmtint(int *i, const char *mod) {
     char *str;
-    int tmp;
+    int tmp, len;
     
-    tmp = i;
-    *len = 1;
+    tmp = (int)i;
+    len = 1;
     while ((tmp /= 10))
-        (*len)++;
-    str = calloc(1, (*len) + 1);
-    sprintf(str, "%d", i);
+        len++;
+    str = calloc(1, (size_t)len + 1);
+    sprintf(str, mod, (int)*i);
     
     return str;
 }
 
-char *fmtstr(const char *str, unsigned long *len) {
-    *(len) = strlen(str);
+char *fmtstr(const char *str, const char *mod) {
     return strdup(str);
 }
 
-char *fmtflt(double f, unsigned long *len) {
+char *fmtflt(double *f, const char *mod) {
     char *str;
-    double tmp;
-    
-    tmp = f;
-    *len = 1;
-    while ((tmp /= 10))
-        (*len)++;
-    str = calloc(1, (*len) + 1);
-    sprintf(str, "%f", f);
+
+    asprintf(&str, mod, (double)*f);
     
     return str;
 }
 
-char *fmtptr(void *o, unsigned long *len) {
+char *fmtptr(void *o, const char *mod) {
     char *str;
     
     str = calloc(1, 64);
-    sprintf(str, "%p", o);
-    (*len) = strlen(str);
+    sprintf(str, mod, o);
     
     return str;
 }
@@ -69,9 +62,14 @@ void fmtdef(void) {
 }
 
 char *svputfmt(const char *fmt, va_list lst) {
-    char *cpy, *ret, *tmp, tok[2], *dat;
+    char *cpy, *ret, *tmp, tok[10], key[2], *dat;
     fmtfunc_t func;
-    unsigned long len;
+    union {
+        double dval;
+        void *pval;
+        int ival;
+    } val;
+    int i;
     
     if (!deflt)
         fmtdef();
@@ -83,18 +81,44 @@ char *svputfmt(const char *fmt, va_list lst) {
     
     
     while ((tmp = strtok(NULL, "%"))) {
-        tok[0] = tmp[0], tok[1] = '\0';
-        if (tok[0] == 'P') {
+        i = 1;
+        tok[0] = '%';
+        while (*tmp) {
+            tok[i++] = *tmp;
+            if (isalpha(tok[i-1])) {
+                tok[i] = 0;
+                break;
+            }
+            tmp++;
+        }
+        if (tok[i-1] == 'P') {
             ret = realloc(ret, strlen(ret) + strlen(tmp) + 2);
             strcat(ret, "%");
             strcat(ret, ++tmp);
             continue;
         }
         
-        func = (fmtfunc_t)dictobj(deflt, tok);
+        key[0] = tok[i-1], key[1] = 0;
+        func = (fmtfunc_t)dictobj(deflt, key);
         
-        dat = func(va_arg(lst, void *), &len);
-        ret = realloc(ret, strlen(ret) + (size_t)len + strlen(tmp) + 1);
+        switch (tok[i-1]) {
+            case 'f':
+                val.dval = va_arg(lst, double);
+                dat = func(&(val.dval), tok);
+                break;
+                
+            case 'd':
+                val.ival = va_arg(lst, int);
+                dat = func(&(val.ival), tok);
+                break;
+
+            default:
+                val.pval = va_arg(lst, void *);
+                dat = func(val.pval, tok);
+                break;
+        }
+        
+        ret = realloc(ret, strlen(ret) + strlen(dat) + strlen(tmp) + 1);
         strcat(ret, dat);
         strcat(ret, ++tmp);
         

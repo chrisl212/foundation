@@ -11,11 +11,9 @@
 #include <stdlib.h>
 #include "foundation.h"
 
-char *testfmt(const char *str, unsigned long *len) {
-    char *newstr = malloc(strlen(str) + 6);
-    strcpy(newstr, str);
-    strcat(newstr, "TEST");
-    (*len) = strlen(newstr);
+char *testfmt(array_t *a) {
+    char *newstr = malloc(strlen(arrobj(a, 0)) + 1);
+    strcpy(newstr, arrobj(a, 0));
     
     return newstr;
 }
@@ -34,6 +32,7 @@ int main() {
     puts(dictobj(dict, "Key3"));
     
     fmtdef();
-    dictadd(deflt, (void *)testfmt, "T");
-    putfmt("This is a %d%P test and this %s is a string. The address of dict is %p. This is a test %T.", 43223, "'This is a test string'", arr, "testfmt");
+    dictadd(deflt, (void *)testfmt, "a");
+    putfmt("This is a %d%P test and this %s is a string. The address of dict is %p.\n", 43223, "'This is a test string'", dict);
+    putfmt("This double should work %.6f.", (double)23.5);
 }
