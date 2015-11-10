@@ -12,5 +12,6 @@
 #include "array.h"
 #include "dict.h"
 #include "hash.h"
+#include "putfmt.h"
 
 #endif
